@@ -34,3 +34,10 @@ make_pdf.py
 *.conversion_profile.json
 *_files/
 projects/
+
+# Temporary Benchmark / Simulation Outputs
+data/
+reliability_evaluation_report.png
+dataset/processed_32x32/
+dataset/raw/
+dataset/test_pairs.txt

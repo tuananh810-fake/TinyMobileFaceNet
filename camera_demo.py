@@ -11,7 +11,7 @@ Quy trình hoạt động:
    - Tuấn Anh: Điểm ~55% - 80% (Khung XANH LÁ)
    - Người lạ: Điểm ~2% - 15% (Khung ĐỎ 'Nguoi La (Unknown)')
 
-Tác giả: Dương Văn Tuyên & Nguyễn Sỹ Tuấn Anh (VNU-UET)
+Tác giả: Nguyễn Sỹ Tuấn Anh (VNU-UET)
 Dành cho: LSI Design Contest 2026
 """
 

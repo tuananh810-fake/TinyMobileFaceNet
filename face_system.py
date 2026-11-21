@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Hệ thống Nhận diện Khuôn mặt Thời gian thực: Chạy trên Camera hoặc Video file
-Tác giả: Dương Văn Tuyên & Nguyễn Sỹ Tuấn Anh
+Tác giả: Nguyễn Sỹ Tuấn Anh
 """
 import cv2
 import torch

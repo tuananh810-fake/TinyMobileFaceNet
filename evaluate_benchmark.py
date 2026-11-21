@@ -2,7 +2,7 @@
 """
 Chương trình Đánh giá Độ tin cậy (Reliability Evaluation & Benchmark)
 cho mô hình phần cứng TinyMobileFaceNet-32 (Tương đương chuẩn LFW của MobileFaceNet)
-Tác giả: Dương Văn Tuyên & Nguyễn Sỹ Tuấn Anh (VNU-UET)
+Tác giả: Nguyễn Sỹ Tuấn Anh (VNU-UET)
 Dành cho: LSI Design Contest 2026
 
 Bao gồm:

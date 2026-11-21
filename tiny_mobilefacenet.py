@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Mô hình Tiny-MobileFaceNet-32 tối ưu cho cuộc thi LSI Contest 2026
-Tác giả: Dương Văn Tuyên & Nguyễn Sỹ Tuấn Anh (VNU-UET)
+Tác giả: Nguyễn Sỹ Tuấn Anh (VNU-UET)
 Input: [B, 3, 32, 32] -> Output: [B, 128] (Face Embedding)
 """
 
