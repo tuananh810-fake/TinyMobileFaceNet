@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C++ / OS files
+.DS_Store
+Thumbs.db
+*.bak
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Datasets (Dung lượng lớn, không đưa lên Git)
+lfw_dataset/
+*.zip
+*.tar.gz
+*.tar
+
+# Reference Upstream Repo
+MobileFaceNet/
+
+# Large Teacher Models
+mobilefacenet_scripted.pt
+
+# Temporary PDF generator scripts
+generate_final_report_pdf.py
+generate_latex_report_pdf.py
+generate_pipeline_pdf.py
+make_pdf.py
+*.conversion_profile.json
+*_files/
+projects/
