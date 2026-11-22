@@ -339,7 +339,7 @@ def export_database(model_weights=None, save_file="face_database.pt"):
     import torch.nn.functional as F
     from tiny_mobilefacenet import TinyMobileFaceNet32
 
-    default_distilled = os.path.join(BASE_DIR, "weights", "tiny_mobilefacenet_distilled.pt")
+    default_distilled = os.path.join(BASE_DIR, "weights", "tiny_mobilefacenet_lfw.pt")
     weights_path = model_weights if (model_weights and os.path.exists(model_weights)) else (default_distilled if os.path.exists(default_distilled) else None)
 
     model = TinyMobileFaceNet32(embedding_size=128)

@@ -49,66 +49,9 @@ if sys.platform == "win32":
         pass
 
 # =============================================================================
-# 1. ĐỊNH NGHĨA MÔ HÌNH PHẦN CỨNG TINY-MOBILEFACENET-32
+# 1. NẠP KIẾN TRÚC TINY-MOBILEFACENET-32 (BATCHNORM + BN FOLDING)
 # =============================================================================
-class ConvBlock(nn.Module):
-    def __init__(self, in_c, out_c, kernel_size, stride, padding):
-        super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(in_c, out_c, kernel_size, stride, padding, bias=False)
-        self.prelu = nn.PReLU(out_c)
-
-    def forward(self, x):
-        return self.prelu(self.conv(x))
-
-
-class Bottleneck(nn.Module):
-    def __init__(self, in_c, out_c, stride, expansion_factor):
-        super(Bottleneck, self).__init__()
-        self.use_residual = (stride == 1 and in_c == out_c)
-        hidden_dim = in_c * expansion_factor
-        layers = []
-        if expansion_factor != 1:
-            layers.append(ConvBlock(in_c, hidden_dim, kernel_size=1, stride=1, padding=0))
-        layers.append(nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=stride, padding=1, groups=hidden_dim, bias=False))
-        layers.append(nn.PReLU(hidden_dim))
-        layers.append(nn.Conv2d(hidden_dim, out_c, kernel_size=1, stride=1, padding=0, bias=False))
-        self.conv = nn.Sequential(*layers)
-
-    def forward(self, x):
-        if self.use_residual:
-            return x + self.conv(x)
-        return self.conv(x)
-
-
-class TinyMobileFaceNet32(nn.Module):
-    def __init__(self, embedding_size=128):
-        super(TinyMobileFaceNet32, self).__init__()
-        self.stem = ConvBlock(in_c=3, out_c=32, kernel_size=3, stride=2, padding=1)
-        self.dw_stem = nn.Sequential(
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1, groups=32, bias=False),
-            nn.PReLU(32),
-            nn.Conv2d(32, 32, kernel_size=1, stride=1, padding=0, bias=False)
-        )
-        self.stage1 = Bottleneck(in_c=32, out_c=64, stride=2, expansion_factor=2)
-        self.stage2 = Bottleneck(in_c=64, out_c=64, stride=1, expansion_factor=2)
-        self.stage3 = Bottleneck(in_c=64, out_c=128, stride=2, expansion_factor=4)
-        self.stage4 = Bottleneck(in_c=128, out_c=128, stride=1, expansion_factor=2)
-        self.conv_sep = ConvBlock(in_c=128, out_c=256, kernel_size=1, stride=1, padding=0)
-        self.gdconv = nn.Conv2d(256, 256, kernel_size=4, stride=1, padding=0, groups=256, bias=False)
-        self.linear_conv = nn.Conv2d(256, embedding_size, kernel_size=1, stride=1, padding=0, bias=False)
-
-    def forward(self, x):
-        x = self.stem(x)
-        x = self.dw_stem(x)
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
-        x = self.conv_sep(x)
-        x = self.gdconv(x)
-        x = self.linear_conv(x)
-        embedding = x.view(x.size(0), -1)
-        return F.normalize(embedding, p=2, dim=1)
+from tiny_mobilefacenet import TinyMobileFaceNet32
 
 
 # =============================================================================
@@ -594,8 +537,13 @@ def main():
             print(f"[+] Tự động phát hiện tập dữ liệu LFW tại: {args.data_root}")
 
     raw_dir, pairs_path = ensure_lfw_raw(args.data_root)
-    aligned_dir = os.path.join(args.data_root, "lfw_aligned_112")
-    prepare_aligned_lfw(raw_dir, aligned_dir)
+    retina_aligned_dir = os.path.join(args.data_root, "lfw_aligned_retina_112")
+    if os.path.exists(retina_aligned_dir) and len(os.listdir(retina_aligned_dir)) > 1000:
+        aligned_dir = retina_aligned_dir
+        print(f"[+] Sử dụng tập khuôn mặt căn chỉnh 5 điểm RetinaFace chuẩn xác: {aligned_dir}")
+    else:
+        aligned_dir = os.path.join(args.data_root, "lfw_aligned_112")
+        prepare_aligned_lfw(raw_dir, aligned_dir)
 
     # =========================================================================
     # CHẾ ĐỘ 1: EVAL ONLY (CHỈ ĐÁNH GIÁ MÔ HÌNH HIỆN TẠI VÀ XUẤT BÁO CÁO)
@@ -879,6 +827,11 @@ def main():
             if mean_acc >= old_acc:
                 shutil.copyfile(session_best_path, args.output_weights)
                 print(f"[+] CẢI THIỆN ĐỘ CHÍNH XÁC! ({old_acc:.2f}% -> {mean_acc:.2f}%). Đã cập nhật {args.output_weights}")
+                # Tự động xuất bản gập BN (Zero-BN inference) cho phần cứng/triển khai nhẹ
+                student_model.load_state_dict(torch.load(args.output_weights, map_location=device))
+                folded_path = args.output_weights.replace(".pt", "_folded.pt")
+                torch.save(student_model.fold_bn().state_dict(), folded_path)
+                print(f"[+] Đã xuất trọng số gập BN (Zero-BN) tại: {folded_path}")
             else:
                 print(f"[!] Phiên này ({mean_acc:.2f}%) chưa vượt qua trọng số cũ ({old_acc:.2f}%).")
                 print(f"    -> Giữ nguyên trọng số tốt nhất cũ tại {args.output_weights} (không bị ghi đè mất!).")

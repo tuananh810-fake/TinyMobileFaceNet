@@ -3,8 +3,9 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" />
-  <img src="https://img.shields.io/badge/Model%20Size-212%20KB%20(INT8)-success?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/LFW%20Accuracy-90.13%25-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Model%20Size-214%20KB%20(INT8)-success?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/LFW%20Accuracy-95.68%25-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/ROC%20AUC-0.9908-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
 </p>
 
@@ -17,22 +18,22 @@ Tác giả: **Nguyễn Sỹ Tuấn Anh** ([@tuananh810-fake](https://github.com/
 ## 🌟 Đặc điểm kỹ thuật nổi bật
 
 - **Kích thước đầu vào:** `32 × 32 × 3` (giảm 91.8% dung lượng đệm so với chuẩn `112 × 112`).
-- **Tổng số tham số:** **217,088 parameters** (~212 KB ở định dạng INT8, ~848 KB ở FP32).
-- **Phương pháp huấn luyện:** Áp dụng **Knowledge Distillation (Chưng cất tri thức)** từ mô hình giáo viên MobileFaceNet gốc $112 \times 112$ qua hơn 2.300 epochs.
-- **Không dùng Batch Normalization ở suy diễn (Zero-BN):** Tinh giản toàn bộ tầng chuẩn hóa sang tích chập thuần kết hợp PReLU, loại bỏ phép chia căn bậc hai phức tạp.
+- **Tổng số tham số (sau BN Folding):** **219,616 parameters** (~214.5 KB ở định dạng INT8, ~858 KB ở FP32).
+- **BatchNorm khi train + BN Folding khi suy diễn (Zero-BN Inference):** Dùng `BatchNorm2d` trong quá trình huấn luyện để hội tụ sâu, sau đó gập toán học hoàn toàn vào `Conv2d (weight + bias)` với sai số `0.00%` (`model.fold_bn()`).
+- **Phương pháp huấn luyện:** **Relational Knowledge Distillation (Cosine + Pairwise RKD Loss)** kết hợp căn chỉnh 5 điểm **RetinaFace 5-Point Alignment** từ mô hình giáo viên MobileFaceNet gốc $112 \times 112$.
 - **Global Depthwise Convolution (GDConv 4×4):** Gom trọn vẹn đặc trưng không gian $4 \times 4$ về vector 128 chiều mà vẫn giữ được độ nhạy vị trí không gian.
 
 ---
 
-## 📊 Kết quả kiểm tra độ tin cậy trên chuẩn LFW (6,000 cặp ảnh)
+## 📊 Kết quả kiểm tra độ tin cậy trên chuẩn LFW (10-Fold, 6,000 cặp ảnh)
 
-| Chỉ số đánh giá | Giá trị đạt được | Ghi chú |
-| :--- | :---: | :--- |
-| **Độ chính xác (Accuracy)** | **90.13%** | Đỉnh thực nghiệm đạt **90.30%** |
-| **Diện tích dưới đường cong ROC (AUC)** | **0.9601** | Khả năng phân tách danh tính xuất sắc |
-| **Tỷ lệ lỗi cân bằng (Equal Error Rate - EER)** | **9.97%** | Điểm cân bằng giữa FAR và FRR |
-| **Ngưỡng khoảng cách tối ưu (Threshold)** | **0.273** | Cosine Distance threshold |
-| **Thời gian suy diễn trung bình** | **~15 - 30 ms** | Trên CPU thông thường |
+| Chỉ số đánh giá | Bản cũ (No-BN + Haar) | **Bản mới (BN Folding + RetinaFace + RKD)** | Mức cải thiện |
+| :--- | :---: | :---: | :---: |
+| **Độ chính xác (10-Fold Accuracy)** | 90.45% | **95.68% ± 0.95%** | **+5.23%** |
+| **Diện tích dưới đường cong ROC (AUC)** | 0.9603 | **0.9908** | **+0.0305** |
+| **Tỷ lệ lỗi cân bằng (Equal Error Rate - EER)** | 10.12% | **4.32%** | **Giảm 2.34× lỗi** |
+| **Ngưỡng tối ưu (Cosine Threshold)** | 0.272 | **0.241** | Tách biệt rõ hơn |
+| **Độ chính xác sau BN Folding (Zero-BN)** | — | **95.68% (sai lệch 0.00%)** | Không mất mát |
 
 <p align="center">
   <img src="docs/lfw_benchmark_report.png" alt="LFW Benchmark Report" width="90%"/>

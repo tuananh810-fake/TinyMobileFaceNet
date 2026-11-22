@@ -45,7 +45,7 @@ DATA_OUT_DIR = os.path.join(BASE_DIR, "data")
 ANGLES_FILE = os.path.join(DATA_OUT_DIR, "angles.txt")
 SUMMARY_FILE = os.path.join(DATA_OUT_DIR, "evaluation_summary.json")
 REPORT_IMAGE = os.path.join(BASE_DIR, "reliability_evaluation_report.png")
-DEFAULT_WEIGHTS = os.path.join(BASE_DIR, "weights", "tiny_mobilefacenet_distilled.pt")
+DEFAULT_WEIGHTS = os.path.join(BASE_DIR, "weights", "tiny_mobilefacenet_lfw.pt")
 
 
 def preprocess_image_32(img_path, flip=False):
