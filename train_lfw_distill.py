@@ -560,6 +560,12 @@ def main():
     device_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Đa nhân"
 
     # 1. Đảm bảo dữ liệu thô và khuôn mặt cắt 1:1 sẵn sàng
+    if not os.path.exists(args.data_root) or len(os.listdir(args.data_root)) == 0:
+        sibling_lfw = os.path.normpath(os.path.join(script_dir, "..", "Python", "lfw_dataset"))
+        if os.path.exists(sibling_lfw) and len(os.listdir(sibling_lfw)) > 0:
+            args.data_root = sibling_lfw
+            print(f"[+] Tự động phát hiện tập dữ liệu LFW tại: {args.data_root}")
+
     raw_dir, pairs_path = ensure_lfw_raw(args.data_root)
     aligned_dir = os.path.join(args.data_root, "lfw_aligned_112")
     prepare_aligned_lfw(raw_dir, aligned_dir)
@@ -642,6 +648,7 @@ def main():
     teacher_path = args.teacher
     if teacher_path is None or not os.path.exists(teacher_path):
         candidate_paths = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Python", "mobilefacenet_scripted.pt"),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "MobileFaceNet", "pretrained_model", "mobilefacenet_scripted.pt"),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "weights", "mobilefacenet_scripted.pt"),
             "./mobilefacenet_scripted.pt"

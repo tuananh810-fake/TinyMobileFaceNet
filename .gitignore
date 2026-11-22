@@ -41,3 +41,6 @@ reliability_evaluation_report.png
 dataset/processed_32x32/
 dataset/raw/
 dataset/test_pairs.txt
+reports/
+training_history.csv
+lfw_benchmark_report.png
