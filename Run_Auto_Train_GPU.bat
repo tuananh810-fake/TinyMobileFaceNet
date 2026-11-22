@@ -118,23 +118,24 @@ goto FINISH
 
 :VIEW_HISTORY
 echo.
-if exist "docs\training_history.csv" (
+if exist "training_history.csv" (
+    echo [+] Opening latest training_history.csv...
+    start "" "training_history.csv"
+) else if exist "docs\training_history.csv" (
     echo [+] Opening docs\training_history.csv...
     start "" "docs\training_history.csv"
-) else if exist "training_history.csv" (
-    echo [+] Opening training_history.csv...
-    start "" "training_history.csv"
 ) else (
     echo [!] training_history.csv not found. Run a training session first!
 )
 if exist "reports" (
-    echo [+] Opening reports folder...
+    echo [+] Opening reports folder (all timestamped charts)...
     start "" "reports"
 )
-if exist "docs\lfw_benchmark_report.png" (
-    start "" "docs\lfw_benchmark_report.png"
-) else if exist "lfw_benchmark_report.png" (
+if exist "lfw_benchmark_report.png" (
+    echo [+] Opening latest lfw_benchmark_report.png...
     start "" "lfw_benchmark_report.png"
+) else if exist "docs\lfw_benchmark_report.png" (
+    start "" "docs\lfw_benchmark_report.png"
 )
 echo.
 pause
@@ -145,11 +146,16 @@ if %ERRORLEVEL% EQU 0 (
     echo.
     echo ===============================================================================
     echo   [SUCCESS] Operation completed!
-    echo   - Checkpoint weights: weights\tiny_mobilefacenet_lfw.pt
-    echo   - Latest report image: docs\lfw_benchmark_report.png
-    echo   - Full history log: training_history.csv
+    echo   - Checkpoint weights  : weights\tiny_mobilefacenet_lfw.pt
+    echo   - Latest report image : lfw_benchmark_report.png
+    echo   - Historical charts   : reports\lfw_report_YYYYMMDD_HHMMSS.png
+    echo   - Full history log    : training_history.csv
     echo ===============================================================================
-    if exist "docs\lfw_benchmark_report.png" start "" "docs\lfw_benchmark_report.png"
+    if exist "lfw_benchmark_report.png" (
+        start "" "lfw_benchmark_report.png"
+    ) else if exist "docs\lfw_benchmark_report.png" (
+        start "" "docs\lfw_benchmark_report.png"
+    )
 ) else (
     echo.
     echo [!] Process exited with code %ERRORLEVEL%.

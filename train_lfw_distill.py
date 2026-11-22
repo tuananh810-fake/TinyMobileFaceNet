@@ -300,15 +300,29 @@ class AlignedFaceDistillDataset(Dataset):
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
         if self.augment:
+            # 1. Lật ngang đồng bộ cho cả Student và Teacher
             if np.random.rand() > 0.5:
                 img_rgb = cv2.flip(img_rgb, 1)
-            # Biến thiên ánh sáng nhẹ nhàng
-            alpha = np.random.uniform(0.9, 1.1)
-            beta = np.random.randint(-10, 10)
-            img_rgb = np.clip(img_rgb * alpha + beta, 0, 255).astype(np.uint8)
+
+            # 2. Biến đổi hình học nhẹ đồng bộ (xoay +-8 độ, phóng thu 0.94-1.06, dịch +-4px)
+            if np.random.rand() > 0.4:
+                angle = np.random.uniform(-8.0, 8.0)
+                scale = np.random.uniform(0.94, 1.06)
+                tx = np.random.uniform(-4.0, 4.0)
+                ty = np.random.uniform(-4.0, 4.0)
+                M = cv2.getRotationMatrix2D((56.0, 56.0), angle, scale)
+                M[0, 2] += tx
+                M[1, 2] += ty
+                img_rgb = cv2.warpAffine(img_rgb, M, (112, 112), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
+
+            # 3. Biến thiên ánh sáng & độ tương phản (Color Jitter)
+            alpha = np.random.uniform(0.85, 1.15)
+            beta = np.random.randint(-15, 15)
+            img_rgb = np.clip(img_rgb.astype(np.float32) * alpha + beta, 0, 255).astype(np.uint8)
 
         # 1. Student input: 32x32 chứa 100% mặt người, chuẩn hóa [-1, 1]
-        img_32 = cv2.resize(img_rgb, (32, 32), interpolation=cv2.INTER_AREA)
+        interp = cv2.INTER_LINEAR if (self.augment and np.random.rand() < 0.25) else cv2.INTER_AREA
+        img_32 = cv2.resize(img_rgb, (32, 32), interpolation=interp)
         t_student = torch.from_numpy(img_32.transpose(2, 0, 1)).float()
         t_student = (t_student - 127.5) / 128.0
 
@@ -320,18 +334,31 @@ class AlignedFaceDistillDataset(Dataset):
 
 
 # =============================================================================
-# 4. HÀM MẤT MÁT DISTILLATION TỐI ƯU
+# 4. HÀM MẤT MÁT DISTILLATION TỐI ƯU (COSINE + RELATIONAL PAIRWISE RKD)
 # =============================================================================
 class DistillationLoss(nn.Module):
-    def __init__(self, alpha=2.0):
+    """
+    Kết hợp:
+    - Cosine Alignment Loss: Ép từng vector Student z_s khớp hướng với Teacher z_t.
+    - Relational Knowledge Distillation (RKD): Ép ma trận tương đồng cặp (Z_s @ Z_s^T)
+      khớp với ma trận tương đồng cặp của Teacher (Z_t @ Z_t^T), trực tiếp tối ưu
+      bài toán Face Verification 1:1.
+    """
+    def __init__(self, rel_weight=5.0):
         super(DistillationLoss, self).__init__()
-        self.alpha = alpha
+        self.rel_weight = rel_weight
 
     def forward(self, z_s, z_t):
         cosine_sim = F.cosine_similarity(z_s, z_t, dim=1)
         loss_cos = torch.mean(1.0 - cosine_sim)
-        loss_mse = F.mse_loss(z_s, z_t)
-        return loss_cos + self.alpha * loss_mse, loss_cos.item(), loss_mse.item()
+
+        # Relational pairwise similarity matrix loss
+        sim_s = torch.matmul(z_s, z_s.T)
+        sim_t = torch.matmul(z_t, z_t.T)
+        loss_rel = F.mse_loss(sim_s, sim_t)
+
+        total_loss = loss_cos + self.rel_weight * loss_rel
+        return total_loss, loss_cos.item(), loss_rel.item()
 
 
 # =============================================================================
@@ -677,25 +704,35 @@ def main():
     total_params = sum(p.numel() for p in student_model.parameters())
     print(f"    -> Tham số phần cứng: {total_params:,} (~{total_params/1024:.1f} KB INT8, tương thích Spartan-7 BRAM)")
 
-    # 4. Kế thừa trọng số cũ nếu có (Continuous Training)
+    # 4. Kế thừa trọng số cũ nếu có (Continuous Training) & Bảo vệ trọng số tốt nhất
     os.makedirs(os.path.dirname(os.path.abspath(args.output_weights)), exist_ok=True)
+    resumed = False
+    backup_weights_path = args.output_weights + ".bak"
+    session_best_path = args.output_weights + ".session.pt"
+
     if not args.reset_weights and os.path.exists(args.output_weights):
         print(f"    [+] Tìm thấy trọng số tốt nhất trước đó: {args.output_weights}")
         try:
             student_model.load_state_dict(torch.load(args.output_weights, map_location=device))
-            print("        -> Đã kế thừa trọng số thành công! Tiếp tục tối ưu hóa sâu hơn.")
+            shutil.copyfile(args.output_weights, backup_weights_path)
+            resumed = True
+            print("        -> Đã kế thừa và sao lưu an toàn trọng số cũ! Tiếp tục tinh chỉnh (Fine-tune).")
         except Exception as e:
             print(f"        [!] Không thể nạp trọng số cũ ({e}), khởi tạo lại từ đầu.")
 
     # 5. Nạp Dataset
     print("[3] Nạp tập dữ liệu khuôn mặt đã cắt sát (Face Crops)...")
     train_dataset = AlignedFaceDistillDataset(aligned_dir=aligned_dir, augment=True)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, pin_memory=(device.type == 'cuda'))
     print(f"    -> Tổng số ảnh nạp vào: {len(train_dataset):,} ảnh (100% diện tích là ngũ quan khuôn mặt).")
 
-    # 6. Thiết lập Optimizer và Scheduler
-    criterion = DistillationLoss(alpha=2.0)
-    optimizer = torch.optim.AdamW(student_model.parameters(), lr=args.lr, weight_decay=1e-4)
+    # 6. Thiết lập Optimizer và Scheduler (Tự động hạ LR khi Fine-tune để tránh phá vỡ trọng số cũ)
+    effective_lr = args.lr * 0.3 if (resumed and args.lr == 0.001) else args.lr
+    if resumed and effective_lr != args.lr:
+        print(f"    [+] Fine-tune mode: Tự động điều chỉnh LR từ {args.lr} -> {effective_lr:.6f} để tối ưu êm hơn.")
+
+    criterion = DistillationLoss(rel_weight=5.0)
+    optimizer = torch.optim.AdamW(student_model.parameters(), lr=effective_lr, weight_decay=1e-4)
 
     if is_infinite or (has_time_limit and args.epochs <= 0):
         # Chế độ dài hạn/vô tận: Chu kỳ Cosine Warm Restarts mỗi 25 epoch
@@ -765,7 +802,7 @@ def main():
                     elapsed_m = (time.time() - start_time) / 60
                     time_str = f" | Elapsed: {elapsed_m:.1f}m" + (f"/{args.time_limit:.0f}m" if has_time_limit else "")
                     sys.stdout.write(f"\r  [Epoch {epoch_display}] Batch {batch_idx:3d}/{total_batches} ({pct:3d}%) | "
-                                     f"Loss: {cur_loss:.4f} (Cos: {cur_cos:.4f}, MSE: {cur_mse:.4f}){time_str}")
+                                     f"Loss: {cur_loss:.4f} (Cos: {cur_cos:.4f}, RKD: {cur_mse:.4f}){time_str}")
                     sys.stdout.flush()
 
             if batches == 0:
@@ -780,13 +817,14 @@ def main():
 
             epoch_display = f"{epoch:02d}" if is_infinite else f"{epoch:02d}/{args.epochs:02d}"
             print(f"\n>> Epoch [{epoch_display}] XONG ({ep_elapsed:.1f}s) | LR: {scheduler.get_last_lr()[0]:.6f} | "
-                  f"Avg Loss: {avg_loss:.4f} (Cos: {avg_cos:.4f}, MSE: {avg_mse:.4f})")
+                  f"Avg Loss: {avg_loss:.4f} (Cos: {avg_cos:.4f}, RKD: {avg_mse:.4f})")
             sys.stdout.flush()
 
             if avg_loss < best_loss:
                 best_loss = avg_loss
-                torch.save(student_model.state_dict(), args.output_weights)
-                print(f"    [*] Đã lưu Checkpoint tốt nhất mới -> Loss: {best_loss:.4f}")
+                save_target = session_best_path if resumed else args.output_weights
+                torch.save(student_model.state_dict(), save_target)
+                print(f"    [*] Đã lưu Checkpoint tốt nhất phiên này -> Loss: {best_loss:.4f}")
 
             # Đánh giá LFW định kỳ nếu bật eval_every
             if args.eval_every > 0 and (epoch % args.eval_every == 0) and os.path.exists(pairs_path):
@@ -822,14 +860,38 @@ def main():
     print(f"- Trọng số tối ưu đã lưu tại : {args.output_weights}")
     print("=" * 70)
 
-    # 7. Đánh giá kiểm thử 10-fold LFW và xuất báo cáo
+    # 7. Đánh giá kiểm thử 10-fold LFW và so sánh bảo vệ trọng số tốt nhất
     mean_acc, roc_auc, eer, best_th = 0.0, 0.0, 0.0, 0.0
     report_ts_path = "N/A"
+    eval_target = session_best_path if (resumed and os.path.exists(session_best_path)) else args.output_weights
 
-    if os.path.exists(pairs_path) and os.path.exists(args.output_weights):
-        student_model.load_state_dict(torch.load(args.output_weights, map_location=device))
+    if os.path.exists(pairs_path) and os.path.exists(eval_target):
         pairs = read_lfw_pairs(pairs_path, aligned_dir)
+
+        # Đánh giá trọng số mới của phiên này
+        student_model.load_state_dict(torch.load(eval_target, map_location=device))
         mean_acc, std_acc, roc_auc, eer, best_th, fpr, tpr, all_scores, all_labels = evaluate_lfw_official(student_model, pairs, device)
+
+        # Nếu là Fine-tune (resumed), chỉ ghi đè trọng số chính nếu độ chính xác LFW không bị tụt
+        if resumed and os.path.exists(backup_weights_path) and os.path.exists(session_best_path):
+            student_model.load_state_dict(torch.load(backup_weights_path, map_location=device))
+            old_acc, _, old_auc, _, _, _, _, _, _ = evaluate_lfw_official(student_model, pairs, device)
+            if mean_acc >= old_acc:
+                shutil.copyfile(session_best_path, args.output_weights)
+                print(f"[+] CẢI THIỆN ĐỘ CHÍNH XÁC! ({old_acc:.2f}% -> {mean_acc:.2f}%). Đã cập nhật {args.output_weights}")
+            else:
+                print(f"[!] Phiên này ({mean_acc:.2f}%) chưa vượt qua trọng số cũ ({old_acc:.2f}%).")
+                print(f"    -> Giữ nguyên trọng số tốt nhất cũ tại {args.output_weights} (không bị ghi đè mất!).")
+            try:
+                os.remove(session_best_path)
+                os.remove(backup_weights_path)
+            except Exception:
+                pass
+        elif os.path.exists(backup_weights_path):
+            try:
+                os.remove(backup_weights_path)
+            except Exception:
+                pass
 
         # Xuất biểu đồ mới nhất
         plot_lfw_report(fpr, tpr, roc_auc, eer, best_th, mean_acc, all_scores, all_labels, args.report_img)
