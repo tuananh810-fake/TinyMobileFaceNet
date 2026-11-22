@@ -44,3 +44,4 @@ dataset/test_pairs.txt
 reports/
 training_history.csv
 lfw_benchmark_report.png
+*.session.pt
