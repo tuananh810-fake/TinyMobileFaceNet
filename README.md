@@ -79,16 +79,6 @@ python camera_demo.py
 - Khung **XANH LÁ**: Nhận diện đúng danh tính đã đăng ký.
 - Khung **ĐỎ**: Người lạ (Unknown).
 
-### 5. Trung tâm điều khiển huấn luyện & Đánh giá (Windows)
-Trên Windows, bạn chỉ cần nhấp đúp chuột vào tệp **`Run_Auto_Train_GPU.bat`** để mở menu điều khiển tự động:
-- [1] Huấn luyện nhanh (30 Epochs)
-- [2] Tùy chỉnh số lượng Epochs (50, 100, 200...)
-- [3] Huấn luyện theo giới hạn thời gian (30, 60, 120 phút...)
-- [4] Huấn luyện liên tục không giới hạn (Tự động bắt Ctrl+C để lưu trọng số tối ưu)
-- [5] Đánh giá Benchmark LFW 10-Fold trên 6.000 cặp kiểm thử
-- [6] Khởi động Webcam Demo
-- [7] Xem lịch sử huấn luyện (training_history.csv) & đồ thị báo cáo
-
 ---
 
 ## ☁️ Huấn luyện trên Google Colab

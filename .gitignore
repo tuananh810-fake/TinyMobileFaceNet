@@ -45,3 +45,6 @@ reports/
 training_history.csv
 lfw_benchmark_report.png
 *.session.pt
+
+# Local Windows helper scripts
+*.bat
