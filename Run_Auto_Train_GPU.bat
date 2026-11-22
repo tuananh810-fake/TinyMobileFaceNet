@@ -39,10 +39,10 @@ if not "%DATA_OPT%"=="" echo   Dataset location  : %DATA_OPT%
 echo.
 echo   CHOOSE AN ACTION:
 echo.
-echo   [1] Quick Train (30 Epochs)
-echo   [2] Custom Epochs (Set number of epochs)
-echo   [3] Time Limit Train (30, 60, 120 minutes...)
-echo   [4] Infinite Loop Train (Continuous training, press Ctrl+C to stop)
+echo   [1] Standard Train (100 Epochs, Batch 128)
+echo   [2] Custom Epochs (Set number of epochs, default 150)
+echo   [3] Time Limit Train (60, 120, 180 minutes...)
+echo   [4] Infinite Loop Train (50-epoch Cosine cycles, auto-eval every 50 ep, Ctrl+C to stop)
 echo   [5] Quick LFW Benchmark (10-Fold Evaluation on 6,000 pairs)
 echo   [6] Run Real-Time Webcam Demo (camera_demo.py)
 echo   [7] View Training History and Reports
@@ -66,40 +66,40 @@ goto MENU
 
 :QUICK_TRAIN
 echo.
-echo [+] Starting Quick Training (30 Epochs)...
+echo [+] Starting Standard Training (100 Epochs, Batch Size 128)...
 echo.
-"%PYTHON_EXE%" train_lfw_distill.py --epochs 30 --batch-size 64 %DATA_OPT% %TEACHER_OPT%
+"%PYTHON_EXE%" train_lfw_distill.py --epochs 100 --batch-size 128 %DATA_OPT% %TEACHER_OPT%
 goto FINISH
 
 :CUSTOM_EPOCHS
 echo.
-set /p NUM_EPOCHS="Enter number of epochs (e.g. 50, 100, 200): "
-if "%NUM_EPOCHS%"=="" set NUM_EPOCHS=50
-echo [+] Starting Training for %NUM_EPOCHS% Epochs...
+set /p NUM_EPOCHS="Enter number of epochs (e.g. 100, 150, 300): "
+if "%NUM_EPOCHS%"=="" set NUM_EPOCHS=150
+echo [+] Starting Training for %NUM_EPOCHS% Epochs (Batch Size 128)...
 echo.
-"%PYTHON_EXE%" train_lfw_distill.py --epochs %NUM_EPOCHS% --batch-size 64 %DATA_OPT% %TEACHER_OPT%
+"%PYTHON_EXE%" train_lfw_distill.py --epochs %NUM_EPOCHS% --batch-size 128 %DATA_OPT% %TEACHER_OPT%
 goto FINISH
 
 :TIME_LIMIT
 echo.
-set /p NUM_MINUTES="Enter training duration in minutes (e.g. 30, 60, 120): "
-if "%NUM_MINUTES%"=="" set NUM_MINUTES=30
-echo [+] Starting Time-Limited Training (%NUM_MINUTES% minutes)...
+set /p NUM_MINUTES="Enter training duration in minutes (e.g. 60, 120, 180): "
+if "%NUM_MINUTES%"=="" set NUM_MINUTES=60
+echo [+] Starting Time-Limited Training (%NUM_MINUTES% minutes, Batch Size 128)...
 echo.
-"%PYTHON_EXE%" train_lfw_distill.py --time-limit %NUM_MINUTES% --batch-size 64 %DATA_OPT% %TEACHER_OPT%
+"%PYTHON_EXE%" train_lfw_distill.py --time-limit %NUM_MINUTES% --batch-size 128 %DATA_OPT% %TEACHER_OPT%
 goto FINISH
 
 :INFINITE_TRAIN
 echo.
 echo ===============================================================================
-echo   [INFINITE TRAINING MODE ACTIVATED]
-echo   The model will continuously train epoch after epoch.
+echo   [INFINITE TRAINING MODE ACTIVATED - 50-EPOCH COSINE CYCLES]
+echo   The model will continuously train epoch after epoch (auto-eval every 50 ep).
 echo   Press CTRL+C anytime in this window to stop.
 echo   The system will automatically catch Ctrl+C, save the best weights,
 echo   and generate the complete LFW benchmark report!
 echo ===============================================================================
 echo.
-"%PYTHON_EXE%" train_lfw_distill.py --infinite --batch-size 64 %DATA_OPT% %TEACHER_OPT%
+"%PYTHON_EXE%" train_lfw_distill.py --infinite --batch-size 128 --eval-every 50 %DATA_OPT% %TEACHER_OPT%
 goto FINISH
 
 :EVAL_ONLY

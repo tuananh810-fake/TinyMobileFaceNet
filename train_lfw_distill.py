@@ -501,10 +501,10 @@ def log_training_history(history_file, record):
 # =============================================================================
 def main():
     parser = argparse.ArgumentParser(description="Upgraded LFW Distillation Pipeline for TinyMobileFaceNet-32")
-    parser.add_argument("--epochs", type=int, default=30, help="Số epoch huấn luyện (0 hoặc âm = Huấn luyện vô tận)")
+    parser.add_argument("--epochs", type=int, default=100, help="Số epoch huấn luyện (0 hoặc âm = Huấn luyện vô tận)")
     parser.add_argument("--infinite", action="store_true", help="Bật chế độ huấn luyện vô tận (chạy đến khi bấm Ctrl+C)")
     parser.add_argument("--time-limit", type=float, default=0, help="Giới hạn thời gian huấn luyện tính bằng phút (0 = không giới hạn)")
-    parser.add_argument("--batch-size", type=int, default=64, help="Kích thước batch (RTX 4060 khuyến nghị: 64)")
+    parser.add_argument("--batch-size", type=int, default=128, help="Kích thước batch (RTX 4060 khuyến nghị: 128 cho RKD)")
     parser.add_argument("--lr", type=float, default=0.001, help="Tốc độ học (AdamW)")
     parser.add_argument("--eval-every", type=int, default=0, help="Đánh giá LFW định kỳ mỗi N epoch (0 = chỉ đánh giá khi kết thúc)")
     parser.add_argument("--eval-only", action="store_true", help="Chỉ đánh giá benchmark LFW mô hình hiện tại và xuất báo cáo")
@@ -683,8 +683,8 @@ def main():
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=effective_lr, weight_decay=1e-4)
 
     if is_infinite or (has_time_limit and args.epochs <= 0):
-        # Chế độ dài hạn/vô tận: Chu kỳ Cosine Warm Restarts mỗi 25 epoch
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=25, T_mult=1, eta_min=1e-5)
+        # Chế độ dài hạn/vô tận: Chu kỳ Cosine Warm Restarts mỗi 50 epoch
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=1, eta_min=1e-5)
     else:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs, eta_min=1e-5)
 
