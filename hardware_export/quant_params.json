@@ -1,0 +1,603 @@
+{
+  "model": "TinyMobileFaceNet-32 (Full INT8 QAT, Zero-BN)",
+  "author": "Nguyen Sy Tuan Anh",
+  "shift_bits_conv": 16,
+  "residual_stage2": {
+    "m_skip": 24598,
+    "m_branch": 23477,
+    "shift": 15
+  },
+  "residual_stage4": {
+    "m_skip": 21690,
+    "m_branch": 25514,
+    "shift": 15
+  },
+  "summary": {
+    "total_layers": 18,
+    "total_macs": 5758976,
+    "total_weight_bytes_int8": 215360,
+    "total_bias_bytes_int32": 10112,
+    "total_prelu_bytes_int8": 1728,
+    "total_mult_bytes_int32": 10112,
+    "max_single_activation_bank_bytes": 16384,
+    "max_ping_pong_ram_bytes": 24576,
+    "est_latency_ms_9dsp_100mhz": 6.4
+  },
+  "metrics_10fold_lfw": {
+    "fp32_acc": 96.68333333333334,
+    "fp32_std": 0.8281505499203217,
+    "fp32_auc": 0.9944542222222222,
+    "fp32_eer": 3.2166666666666677,
+    "fp32_th": 0.24250902235507965,
+    "ptq_acc": 96.71666666666667,
+    "ptq_std": 0.6057593948462103,
+    "ptq_auc": 0.9941249999999999,
+    "ptq_eer": 3.216666666666665,
+    "ptq_th": 0.2378332018852234,
+    "qat_int_acc": 97.06666666666666,
+    "qat_int_std": 0.778888096369862,
+    "qat_int_auc": 0.9941352222222224,
+    "qat_int_eer": 3.2666666666666644,
+    "qat_int_th": 0.24025481939315796
+  },
+  "layers": [
+    {
+      "index": 1,
+      "name": "L01_stem",
+      "in_shape_CHW": [
+        3,
+        32,
+        32
+      ],
+      "out_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "kernel": "3x3",
+      "stride": 2,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 221184,
+      "weight_bytes_int8": 864,
+      "bias_bytes_int32": 128,
+      "prelu_bytes_int8": 32,
+      "act_in_bytes_int8": 3072,
+      "act_out_bytes_int8": 8192,
+      "weight_offset": 0,
+      "bias_offset": 0,
+      "mult_offset": 0,
+      "prelu_offset": 0,
+      "shift": 16,
+      "scale_in": 0.007874015718698502,
+      "scale_out": 0.03162698820233345
+    },
+    {
+      "index": 2,
+      "name": "L02_dw_stem_dw",
+      "in_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "out_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "kernel": "3x3",
+      "stride": 1,
+      "groups": 32,
+      "has_prelu": true,
+      "macs": 73728,
+      "weight_bytes_int8": 288,
+      "bias_bytes_int32": 128,
+      "prelu_bytes_int8": 32,
+      "act_in_bytes_int8": 8192,
+      "act_out_bytes_int8": 8192,
+      "weight_offset": 864,
+      "bias_offset": 32,
+      "mult_offset": 32,
+      "prelu_offset": 32,
+      "shift": 16,
+      "scale_in": 0.03162698820233345,
+      "scale_out": 0.03800772875547409
+    },
+    {
+      "index": 3,
+      "name": "L03_dw_stem_pw",
+      "in_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "out_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 262144,
+      "weight_bytes_int8": 1024,
+      "bias_bytes_int32": 128,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 8192,
+      "act_out_bytes_int8": 8192,
+      "weight_offset": 1152,
+      "bias_offset": 64,
+      "mult_offset": 64,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.03800772875547409,
+      "scale_out": 0.030536284670233727
+    },
+    {
+      "index": 4,
+      "name": "L04_s1_exp",
+      "in_shape_CHW": [
+        32,
+        16,
+        16
+      ],
+      "out_shape_CHW": [
+        64,
+        16,
+        16
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 524288,
+      "weight_bytes_int8": 2048,
+      "bias_bytes_int32": 256,
+      "prelu_bytes_int8": 64,
+      "act_in_bytes_int8": 8192,
+      "act_out_bytes_int8": 16384,
+      "weight_offset": 2176,
+      "bias_offset": 96,
+      "mult_offset": 96,
+      "prelu_offset": 64,
+      "shift": 16,
+      "scale_in": 0.030536284670233727,
+      "scale_out": 0.021772082895040512
+    },
+    {
+      "index": 5,
+      "name": "L05_s1_dw",
+      "in_shape_CHW": [
+        64,
+        16,
+        16
+      ],
+      "out_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "kernel": "3x3",
+      "stride": 2,
+      "groups": 64,
+      "has_prelu": true,
+      "macs": 36864,
+      "weight_bytes_int8": 576,
+      "bias_bytes_int32": 256,
+      "prelu_bytes_int8": 64,
+      "act_in_bytes_int8": 16384,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 4224,
+      "bias_offset": 160,
+      "mult_offset": 160,
+      "prelu_offset": 128,
+      "shift": 16,
+      "scale_in": 0.021772082895040512,
+      "scale_out": 0.025323214009404182
+    },
+    {
+      "index": 6,
+      "name": "L06_s1_pw",
+      "in_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 262144,
+      "weight_bytes_int8": 4096,
+      "bias_bytes_int32": 256,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 4800,
+      "bias_offset": 224,
+      "mult_offset": 224,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.025323214009404182,
+      "scale_out": 0.019179491326212883
+    },
+    {
+      "index": 7,
+      "name": "L07_s2_exp",
+      "in_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        128,
+        8,
+        8
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 524288,
+      "weight_bytes_int8": 8192,
+      "bias_bytes_int32": 512,
+      "prelu_bytes_int8": 128,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 8192,
+      "weight_offset": 8896,
+      "bias_offset": 288,
+      "mult_offset": 288,
+      "prelu_offset": 192,
+      "shift": 16,
+      "scale_in": 0.019179491326212883,
+      "scale_out": 0.01587405428290367
+    },
+    {
+      "index": 8,
+      "name": "L08_s2_dw",
+      "in_shape_CHW": [
+        128,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        128,
+        8,
+        8
+      ],
+      "kernel": "3x3",
+      "stride": 1,
+      "groups": 128,
+      "has_prelu": true,
+      "macs": 73728,
+      "weight_bytes_int8": 1152,
+      "bias_bytes_int32": 512,
+      "prelu_bytes_int8": 128,
+      "act_in_bytes_int8": 8192,
+      "act_out_bytes_int8": 8192,
+      "weight_offset": 17088,
+      "bias_offset": 416,
+      "mult_offset": 416,
+      "prelu_offset": 320,
+      "shift": 16,
+      "scale_in": 0.01587405428290367,
+      "scale_out": 0.02127564698457718
+    },
+    {
+      "index": 9,
+      "name": "L09_s2_pw",
+      "in_shape_CHW": [
+        128,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 524288,
+      "weight_bytes_int8": 8192,
+      "bias_bytes_int32": 256,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 8192,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 18240,
+      "bias_offset": 544,
+      "mult_offset": 544,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.02127564698457718,
+      "scale_out": 0.018306000158190727
+    },
+    {
+      "index": 10,
+      "name": "L10_s3_exp",
+      "in_shape_CHW": [
+        64,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        256,
+        8,
+        8
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 1048576,
+      "weight_bytes_int8": 16384,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 256,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 16384,
+      "weight_offset": 26432,
+      "bias_offset": 608,
+      "mult_offset": 608,
+      "prelu_offset": 448,
+      "shift": 16,
+      "scale_in": 0.02555004321038723,
+      "scale_out": 0.012876982800662518
+    },
+    {
+      "index": 11,
+      "name": "L11_s3_dw",
+      "in_shape_CHW": [
+        256,
+        8,
+        8
+      ],
+      "out_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "kernel": "3x3",
+      "stride": 2,
+      "groups": 256,
+      "has_prelu": true,
+      "macs": 36864,
+      "weight_bytes_int8": 2304,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 256,
+      "act_in_bytes_int8": 16384,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 42816,
+      "bias_offset": 864,
+      "mult_offset": 864,
+      "prelu_offset": 704,
+      "shift": 16,
+      "scale_in": 0.012876982800662518,
+      "scale_out": 0.017506664618849754
+    },
+    {
+      "index": 12,
+      "name": "L12_s3_pw",
+      "in_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        128,
+        4,
+        4
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 524288,
+      "weight_bytes_int8": 32768,
+      "bias_bytes_int32": 512,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 2048,
+      "weight_offset": 45120,
+      "bias_offset": 1120,
+      "mult_offset": 1120,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.017506664618849754,
+      "scale_out": 0.014458149671554565
+    },
+    {
+      "index": 13,
+      "name": "L13_s4_exp",
+      "in_shape_CHW": [
+        128,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 524288,
+      "weight_bytes_int8": 32768,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 256,
+      "act_in_bytes_int8": 2048,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 77888,
+      "bias_offset": 1248,
+      "mult_offset": 1248,
+      "prelu_offset": 960,
+      "shift": 16,
+      "scale_in": 0.014458149671554565,
+      "scale_out": 0.01475695800036192
+    },
+    {
+      "index": 14,
+      "name": "L14_s4_dw",
+      "in_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "kernel": "3x3",
+      "stride": 1,
+      "groups": 256,
+      "has_prelu": true,
+      "macs": 36864,
+      "weight_bytes_int8": 2304,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 256,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 110656,
+      "bias_offset": 1504,
+      "mult_offset": 1504,
+      "prelu_offset": 1216,
+      "shift": 16,
+      "scale_in": 0.01475695800036192,
+      "scale_out": 0.016970060765743256
+    },
+    {
+      "index": 15,
+      "name": "L15_s4_pw",
+      "in_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        128,
+        4,
+        4
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 524288,
+      "weight_bytes_int8": 32768,
+      "bias_bytes_int32": 512,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 2048,
+      "weight_offset": 112960,
+      "bias_offset": 1760,
+      "mult_offset": 1760,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.016970060765743256,
+      "scale_out": 0.017007332295179367
+    },
+    {
+      "index": 16,
+      "name": "L16_conv_sep",
+      "in_shape_CHW": [
+        128,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": true,
+      "macs": 524288,
+      "weight_bytes_int8": 32768,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 256,
+      "act_in_bytes_int8": 2048,
+      "act_out_bytes_int8": 4096,
+      "weight_offset": 145728,
+      "bias_offset": 1888,
+      "mult_offset": 1888,
+      "prelu_offset": 1472,
+      "shift": 16,
+      "scale_in": 0.021842824295163155,
+      "scale_out": 0.014323987066745758
+    },
+    {
+      "index": 17,
+      "name": "L17_gdconv",
+      "in_shape_CHW": [
+        256,
+        4,
+        4
+      ],
+      "out_shape_CHW": [
+        256,
+        1,
+        1
+      ],
+      "kernel": "4x4",
+      "stride": 1,
+      "groups": 256,
+      "has_prelu": false,
+      "macs": 4096,
+      "weight_bytes_int8": 4096,
+      "bias_bytes_int32": 1024,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 4096,
+      "act_out_bytes_int8": 256,
+      "weight_offset": 178496,
+      "bias_offset": 2144,
+      "mult_offset": 2144,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.014323987066745758,
+      "scale_out": 0.01747751049697399
+    },
+    {
+      "index": 18,
+      "name": "L18_linear_conv",
+      "in_shape_CHW": [
+        256,
+        1,
+        1
+      ],
+      "out_shape_CHW": [
+        128,
+        1,
+        1
+      ],
+      "kernel": "1x1",
+      "stride": 1,
+      "groups": 1,
+      "has_prelu": false,
+      "macs": 32768,
+      "weight_bytes_int8": 32768,
+      "bias_bytes_int32": 512,
+      "prelu_bytes_int8": 0,
+      "act_in_bytes_int8": 256,
+      "act_out_bytes_int8": 128,
+      "weight_offset": 182592,
+      "bias_offset": 2400,
+      "mult_offset": 2400,
+      "prelu_offset": -1,
+      "shift": 16,
+      "scale_in": 0.01747751049697399,
+      "scale_out": 0.014399551786482334
+    }
+  ]
+}

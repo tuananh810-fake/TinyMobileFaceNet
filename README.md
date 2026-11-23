@@ -3,41 +3,49 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" />
-  <img src="https://img.shields.io/badge/Model%20Size-214%20KB%20(INT8)-success?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/LFW%20Accuracy-95.68%25-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/ROC%20AUC-0.9908-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Weight%20INT8-210.3%20KB-success?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Full%20INT8%20LFW-97.07%25-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/ROC%20AUC-0.9941-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
 </p>
 
 Tác giả: **Nguyễn Sỹ Tuấn Anh** ([@tuananh810-fake](https://github.com/tuananh810-fake))
 
-**TinyMobileFaceNet** là một mô hình mạng nơ-ron tích chập siêu nhẹ dành cho bài toán nhận diện và xác thực khuôn mặt (Face Verification). Mô hình được kế thừa và tinh gọn trực tiếp từ kiến trúc nổi tiếng **MobileFaceNet (2018)** nhằm tối ưu hóa triệt để cho các hệ thống nhúng, vi điều khiển và bộ xử lý có tài nguyên bộ nhớ hạn chế (Low-memory Embedded Systems).
+**TinyMobileFaceNet** là một mô hình mạng nơ-ron tích chập siêu nhẹ dành cho bài toán nhận diện và xác thực khuôn mặt (Face Verification). Mô hình được kế thừa và tinh gọn trực tiếp từ kiến trúc nổi tiếng **MobileFaceNet (2018)** nhằm tối ưu hóa triệt để cho các hệ thống nhúng, vi điều khiển và bộ tăng tốc phần cứng FPGA (Zero External DRAM, 100% Integer-Only INT8).
 
 ---
 
 ## 🌟 Đặc điểm kỹ thuật nổi bật
 
 - **Kích thước đầu vào:** `32 × 32 × 3` (giảm 91.8% dung lượng đệm so với chuẩn `112 × 112`).
-- **Tổng số tham số (sau BN Folding):** **219,616 parameters** (~214.5 KB ở định dạng INT8, ~858 KB ở FP32).
-- **BatchNorm khi train + BN Folding khi suy diễn (Zero-BN Inference):** Dùng `BatchNorm2d` trong quá trình huấn luyện để hội tụ sâu, sau đó gập toán học hoàn toàn vào `Conv2d (weight + bias)` với sai số `0.00%` (`model.fold_bn()`).
-- **Phương pháp huấn luyện:** **Relational Knowledge Distillation (Cosine + Pairwise RKD Loss)** kết hợp căn chỉnh 5 điểm **RetinaFace 5-Point Alignment** từ mô hình giáo viên MobileFaceNet gốc $112 \times 112$.
-- **Global Depthwise Convolution (GDConv 4×4):** Gom trọn vẹn đặc trưng không gian $4 \times 4$ về vector 128 chiều mà vẫn giữ được độ nhạy vị trí không gian.
+- **Tổng số phép tính (MACs):** **5,758,976 MACs (`5.759 MMACs`)** (~6.40 ms / ~156 FPS trên mảng 9 DSP @ 100 MHz).
+- **Dung lượng phần cứng Full-INT8 (Zero-BN):**
+  - Trọng số `Conv2d` (`INT8`): **215,360 bytes (`210.31 KB`)**
+  - Hệ số `PReLU` (`Q0.7 INT8`): **1,728 bytes (`1.69 KB`)**
+  - Hằng số `Bias` (`INT32`): **2,528 giá trị (`9.88 KB`)**
+  - Hệ số làm tròn `M` (`INT32`, dịch cố định `>> 16`): **2,528 giá trị (`9.88 KB`)**
+  - Bộ đệm `Ping-Pong RAM` tối thiểu: **24.00 KB** (khuyến nghị **2 bank × 16 KB = 32 KB**).
+- **Phương pháp huấn luyện:** **BatchNorm + BN Folding** $\to$ **Relational Knowledge Distillation (Cosine + Pairwise RKD)** với căn chỉnh 5 điểm **RetinaFace** $\to$ **Quantization-Aware Training (QAT Full-INT8)**.
 
 ---
 
 ## 📊 Kết quả kiểm tra độ tin cậy trên chuẩn LFW (10-Fold, 6,000 cặp ảnh)
 
-| Chỉ số đánh giá | Bản cũ (No-BN + Haar) | **Bản mới (BN Folding + RetinaFace + RKD)** | Mức cải thiện |
-| :--- | :---: | :---: | :---: |
-| **Độ chính xác (10-Fold Accuracy)** | 90.45% | **95.68% ± 0.95%** | **+5.23%** |
-| **Diện tích dưới đường cong ROC (AUC)** | 0.9603 | **0.9908** | **+0.0305** |
-| **Tỷ lệ lỗi cân bằng (Equal Error Rate - EER)** | 10.12% | **4.32%** | **Giảm 2.34× lỗi** |
-| **Ngưỡng tối ưu (Cosine Threshold)** | 0.272 | **0.241** | Tách biệt rõ hơn |
-| **Độ chính xác sau BN Folding (Zero-BN)** | — | **95.68% (sai lệch 0.00%)** | Không mất mát |
+| Phiên bản mô hình | 10-Fold Accuracy | ROC AUC | Equal Error Rate (EER) | Threshold |
+| :--- | :---: | :---: | :---: | :---: |
+| Bản v1 (No-BN + Haar Cascade) | 90.45% | 0.9603 | 10.12% | 0.272 |
+| Bản v2 FP32 Folded-BN (RetinaFace + RKD) | 96.68% ± 0.83% | 0.9945 | 3.22% | 0.243 |
+| **🏆 Bản v3 QAT Full-INT8 (Integer-Only Golden Model)** | **97.07% ± 0.78%** | **0.9941** | **3.27%** | **0.240** |
 
 <p align="center">
-  <img src="docs/lfw_benchmark_report.png" alt="LFW Benchmark Report" width="90%"/>
+  <img src="hardware_export/qat_int8_lfw_report.png" alt="QAT Full-INT8 LFW Benchmark Report" width="92%"/>
 </p>
+
+## ⚙️ Bộ tham số phần cứng Full-INT8 (`hardware_export/`)
+- **Bảng tiêu chí gốc 18 tầng (MACs, RAM, Latency):** [hardware_export/Hardware_Baseline_Spec.md](hardware_export/Hardware_Baseline_Spec.md)
+- **Thông số lượng tử hóa (`M`, `shift=16`, offset, shape):** [hardware_export/quant_params.json](hardware_export/quant_params.json)
+- **File nạp ROM/RAM Verilog (`$readmemh`):** `weights_int8.mem`, `bias_int32.mem`, `prelu_q07.mem`, `requant_mult_int32.mem`
+- **Đáp án chuẩn từng tầng cho Testbench Verilog:** `hardware_export/golden_vectors/` (`input_32x32_int8.mem` + 18 tầng + 2 Residual + `final_embedding_128d_int8.txt`)
 
 ---
 
